@@ -10,8 +10,7 @@ def create_assistant(client):
     # Ensure client has correct headers
     if "OpenAI-Beta" not in client.default_headers:
         client.default_headers.update({
-            "OpenAI-Beta": "assistants=v2",
-            "OpenAI-Version": "2024-03-01-preview"
+            "OpenAI-Beta": "assistants=v2"
         })
     
     assistant_file_path = 'assistant.json'

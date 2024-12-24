@@ -29,8 +29,7 @@ VERIFY_TOKEN = 'bluethistle'  # Replace with your custom verification token
 client = OpenAI(
     api_key=OPENAI_API_KEY,
     default_headers={
-        "OpenAI-Beta": "assistants=v2",
-        "OpenAI-Version": "2024-03-01-preview"
+        "OpenAI-Beta": "assistants=v2"
     }
 )
 
