@@ -1,0 +1,25 @@
+2024-12-24 15:09:05,206 - INFO - [33mPress CTRL+C to quit[0m
+2024-12-24 15:09:06,439 - INFO - 172.31.196.47 - - [24/Dec/2024 15:09:06] "[33mGET / HTTP/1.1[0m" 404 -
+2024-12-24 15:09:14,267 - INFO - HTTP Request: POST https://api.openai.com/v1/threads "HTTP/1.1 400 Bad Request"
+2024-12-24 15:09:14,269 - ERROR - Exception on /start [GET]
+Traceback (most recent call last):
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 1455, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 869, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 867, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 852, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/home/runner/bluethsitle-gpts-to-website-/main.py", line 71, in start_conversation
+    thread = client.beta.threads.create()  # Create a new conversation thread using OpenAI API
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/resources/beta/threads/threads.py", line 80, in create
+    return self._post(
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 1055, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 834, in request
+    return self._request(
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 877, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "The v1 Assistants API has been deprecated. Please try again by setting the header 'OpenAI-Beta: assistants=v2'. See the migration guide for more information: https://platform.openai.com/docs/assistants/migration.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_beta'}}
+2024-12-24 15:09:14,270 - INFO - 172.31.196.47 - - [24/Dec/2024 15:09:14] "[35m[1mGET /start HTTP/1.1[0m" 500 -
