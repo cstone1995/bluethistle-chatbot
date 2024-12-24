@@ -7,6 +7,13 @@ import logging
 logging.basicConfig(level=logging.INFO, filename='assistant_debug.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
 def create_assistant(client):
+    # Ensure client has correct headers
+    if "OpenAI-Beta" not in client.default_headers:
+        client.default_headers.update({
+            "OpenAI-Beta": "assistants=v2",
+            "OpenAI-Version": "2024-03-01-preview"
+        })
+    
     assistant_file_path = 'assistant.json'
 
     if os.path.exists(assistant_file_path):
