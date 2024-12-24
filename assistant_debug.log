@@ -384,3 +384,118 @@
  * Running on http://172.31.196.16:8080
 2024-12-24 14:06:03,859 - INFO - [33mPress CTRL+C to quit[0m
 2024-12-24 14:06:04,994 - INFO - 172.31.196.16 - - [24/Dec/2024 14:06:04] "[33mGET / HTTP/1.1[0m" 404 -
+2024-12-24 14:11:10,158 - INFO - 172.31.196.16 - - [24/Dec/2024 14:11:10] "[33mGET / HTTP/1.1[0m" 404 -
+2024-12-24 14:14:37,684 - INFO - Loaded existing assistant ID: asst_p5LeXNEfk0SHcGnFUlJOqrx1
+2024-12-24 14:14:37,697 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8080
+ * Running on http://172.31.196.42:8080
+2024-12-24 14:14:37,697 - INFO - [33mPress CTRL+C to quit[0m
+2024-12-24 14:14:38,762 - INFO - 172.31.196.42 - - [24/Dec/2024 14:14:38] "[33mGET / HTTP/1.1[0m" 404 -
+2024-12-24 14:35:30,129 - INFO - Loaded existing assistant ID: asst_p5LeXNEfk0SHcGnFUlJOqrx1
+2024-12-24 14:35:30,141 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8080
+ * Running on http://172.31.196.47:8080
+2024-12-24 14:35:30,141 - INFO - [33mPress CTRL+C to quit[0m
+2024-12-24 14:35:31,301 - INFO - 172.31.196.47 - - [24/Dec/2024 14:35:31] "[33mGET / HTTP/1.1[0m" 404 -
+2024-12-24 14:35:56,298 - INFO - Loaded existing assistant ID: asst_p5LeXNEfk0SHcGnFUlJOqrx1
+2024-12-24 14:35:56,302 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+ * Running on all addresses (0.0.0.0)
+ * Running on http://127.0.0.1:8080
+ * Running on http://172.31.196.47:8080
+2024-12-24 14:35:56,302 - INFO - [33mPress CTRL+C to quit[0m
+2024-12-24 14:35:56,753 - INFO - 172.31.196.47 - - [24/Dec/2024 14:35:56] "[33mGET / HTTP/1.1[0m" 404 -
+2024-12-24 14:42:54,701 - INFO - 172.31.196.47 - - [24/Dec/2024 14:42:54] "[33mGET / HTTP/1.1[0m" 404 -
+2024-12-24 14:43:24,455 - INFO - HTTP Request: POST https://api.openai.com/v1/threads "HTTP/1.1 400 Bad Request"
+2024-12-24 14:43:24,455 - ERROR - Exception on /start [GET]
+Traceback (most recent call last):
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 1455, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 869, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 867, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 852, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/home/runner/bluethsitle-gpts-to-website-/main.py", line 68, in start_conversation
+    thread = client.beta.threads.create()  # Create a new conversation thread using OpenAI API
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/resources/beta/threads/threads.py", line 80, in create
+    return self._post(
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 1055, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 834, in request
+    return self._request(
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 877, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "The v1 Assistants API has been deprecated. Please try again by setting the header 'OpenAI-Beta: assistants=v2'. See the migration guide for more information: https://platform.openai.com/docs/assistants/migration.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_beta'}}
+2024-12-24 14:43:24,457 - INFO - 172.31.196.47 - - [24/Dec/2024 14:43:24] "[35m[1mGET /start HTTP/1.1[0m" 500 -
+2024-12-24 14:45:45,418 - INFO - HTTP Request: POST https://api.openai.com/v1/threads "HTTP/1.1 400 Bad Request"
+2024-12-24 14:45:45,418 - ERROR - Exception on /start [GET]
+Traceback (most recent call last):
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 1455, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 869, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 867, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 852, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/home/runner/bluethsitle-gpts-to-website-/main.py", line 68, in start_conversation
+    thread = client.beta.threads.create()  # Create a new conversation thread using OpenAI API
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/resources/beta/threads/threads.py", line 80, in create
+    return self._post(
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 1055, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 834, in request
+    return self._request(
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 877, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "The v1 Assistants API has been deprecated. Please try again by setting the header 'OpenAI-Beta: assistants=v2'. See the migration guide for more information: https://platform.openai.com/docs/assistants/migration.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_beta'}}
+2024-12-24 14:45:45,419 - INFO - 172.31.196.47 - - [24/Dec/2024 14:45:45] "[35m[1mGET /start HTTP/1.1[0m" 500 -
+2024-12-24 14:46:46,407 - INFO - HTTP Request: POST https://api.openai.com/v1/threads "HTTP/1.1 400 Bad Request"
+2024-12-24 14:46:46,407 - ERROR - Exception on /start [GET]
+Traceback (most recent call last):
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 1455, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 869, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 867, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 852, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/home/runner/bluethsitle-gpts-to-website-/main.py", line 68, in start_conversation
+    thread = client.beta.threads.create()  # Create a new conversation thread using OpenAI API
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/resources/beta/threads/threads.py", line 80, in create
+    return self._post(
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 1055, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 834, in request
+    return self._request(
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 877, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "The v1 Assistants API has been deprecated. Please try again by setting the header 'OpenAI-Beta: assistants=v2'. See the migration guide for more information: https://platform.openai.com/docs/assistants/migration.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_beta'}}
+2024-12-24 14:46:46,408 - INFO - 172.31.196.47 - - [24/Dec/2024 14:46:46] "[35m[1mGET /start HTTP/1.1[0m" 500 -
+2024-12-24 14:47:13,091 - INFO - HTTP Request: POST https://api.openai.com/v1/threads "HTTP/1.1 400 Bad Request"
+2024-12-24 14:47:13,092 - ERROR - Exception on /start [GET]
+Traceback (most recent call last):
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 1455, in wsgi_app
+    response = self.full_dispatch_request()
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 869, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 867, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 852, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+  File "/home/runner/bluethsitle-gpts-to-website-/main.py", line 68, in start_conversation
+    thread = client.beta.threads.create()  # Create a new conversation thread using OpenAI API
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/resources/beta/threads/threads.py", line 80, in create
+    return self._post(
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 1055, in post
+    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 834, in request
+    return self._request(
+  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 877, in _request
+    raise self._make_status_error_from_response(err.response) from None
+openai.BadRequestError: Error code: 400 - {'error': {'message': "The v1 Assistants API has been deprecated. Please try again by setting the header 'OpenAI-Beta: assistants=v2'. See the migration guide for more information: https://platform.openai.com/docs/assistants/migration.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_beta'}}
+2024-12-24 14:47:13,093 - INFO - 172.31.196.47 - - [24/Dec/2024 14:47:13] "[35m[1mGET /start HTTP/1.1[0m" 500 -
