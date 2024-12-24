@@ -11,8 +11,8 @@ language = "python3"
 
 [deployment]
 run = ["python3", "main.py"]
-deploymentTarget = "gce"
-ignorePorts = true
+deploymentTarget = "cloudrun"
+ignorePorts = false
 
 [[ports]]
 localPort = 8080
