@@ -108,15 +108,11 @@ def chat():
     conversation_transcripts[thread_id].append({"role": "user", "content": user_input})
     start_time = time()  # Record the time before sending the message to track response time
 
-    # Create a new message in the conversation thread with tool configuration
+    # Create a new message in the conversation thread
     message = client.beta.threads.messages.create(
         thread_id=thread_id,
         role="user",
-        content=user_input,
-        tools=[
-            {"type": "file_search"},
-            {"type": "code_interpreter"}
-        ]
+        content=user_input
     )
     
     # Create a run with the configured tools
