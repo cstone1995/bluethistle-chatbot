@@ -133,22 +133,42 @@ You have access to a document that contains detailed information about BlueThist
 
             # Create the assistant with modular instructions
             try:
+                # Create vector store for the knowledge file
+                vector_store = client.beta.vector_stores.create()
+                client.beta.vector_stores.add_files(
+                    vector_store_id=vector_store.id,
+                    file_ids=[file.id]
+                )
+
                 assistant = client.beta.assistants.create(
                     name="BlueThistle AI Customer Support Assistant",
                     instructions=f"{general_info}{key_responsibilities}{communication_guidelines}{additional_guidelines}{important_guidelines}",
-                    model="gpt-3.5-turbo",  # Use a compatible model
-                    tools=[{"type": "retrieval"}],
-                    file_ids=[file.id]  # Use the file ID of the uploaded document
+                    model="gpt-3.5-turbo",
+                    tools=[
+                        {"type": "code_interpreter"},
+                        {"type": "file_search"}
+                    ],
+                    tool_resources={
+                        "file_search": {
+                            "vector_store_ids": [vector_store.id]
+                        }
+                    }
                 )
             except Exception as e:
-                # Retry with GPT-4 if the initial attempt with GPT-3.5 fails
-                logging.warning("GPT-3.5-turbo failed to create assistant. Retrying with GPT-4... It may indicate the need for more advanced capabilities or simplified instructions.")
+                logging.warning("Failed to create assistant with gpt-3.5-turbo. Retrying...")
                 assistant = client.beta.assistants.create(
                     name="BlueThistle AI Customer Support Assistant",
                     instructions=f"{general_info}{key_responsibilities}{communication_guidelines}{additional_guidelines}{important_guidelines}",
-                    model="gpt-3.5-turbo",  # Upgrade to GPT-4 if GPT-3.5 fails
-                    tools=[{"type": "retrieval"}],
-                    file_ids=[file.id]  # Use the file ID of the uploaded document
+                    model="gpt-4",
+                    tools=[
+                        {"type": "code_interpreter"},
+                        {"type": "file_search"}
+                    ],
+                    tool_resources={
+                        "file_search": {
+                            "vector_store_ids": [vector_store.id]
+                        }
+                    }
                 )
 
             # Save the assistant ID for future use

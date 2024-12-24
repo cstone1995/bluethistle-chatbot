@@ -103,9 +103,26 @@ def chat():
     conversation_transcripts[thread_id].append({"role": "user", "content": user_input})
     start_time = time()  # Record the time before sending the message to track response time
 
-    # Create a new message in the conversation thread
-    client.beta.threads.messages.create(thread_id=thread_id, role="user", content=user_input)
-    run = client.beta.threads.runs.create(thread_id=thread_id, assistant_id=assistant_id)  # Run the assistant
+    # Create a new message in the conversation thread with tool configuration
+    message = client.beta.threads.messages.create(
+        thread_id=thread_id,
+        role="user",
+        content=user_input,
+        tools=[
+            {"type": "file_search"},
+            {"type": "code_interpreter"}
+        ]
+    )
+    
+    # Create a run with the configured tools
+    run = client.beta.threads.runs.create(
+        thread_id=thread_id,
+        assistant_id=assistant_id,
+        tools=[
+            {"type": "file_search"},
+            {"type": "code_interpreter"}
+        ]
+    )
 
     # Wait for the assistant to finish processing the message
     while True:
