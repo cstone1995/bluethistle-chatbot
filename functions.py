@@ -165,7 +165,7 @@ You have access to a document that contains detailed information about BlueThist
                 assistant = client.beta.assistants.create(
                     name="BlueThistle AI Customer Support Assistant",
                     instructions=f"{general_info}{key_responsibilities}{communication_guidelines}{additional_guidelines}{important_guidelines}",
-                    model="gpt-4",
+                    model="gpt-4-turbo-preview",
                     tools=[
                         {"type": "code_interpreter"},
                         {"type": "file_search"}

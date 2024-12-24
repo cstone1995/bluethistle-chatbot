@@ -1,12 +1,34 @@
-2024-12-24 15:03:05,877 - INFO - Loaded existing assistant ID: asst_p5LeXNEfk0SHcGnFUlJOqrx1
-2024-12-24 15:03:05,884 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
+2024-12-24 15:17:14,804 - INFO - HTTP Request: POST https://api.openai.com/v1/files "HTTP/1.1 200 OK"
+2024-12-24 15:17:14,805 - INFO - Knowledge file uploaded successfully with ID: file-52RyeyXhHBdTjuHZxTEuSp
+2024-12-24 15:17:14,805 - WARNING - Failed to create assistant with gpt-3.5-turbo. Retrying...
+2024-12-24 15:17:14,805 - ERROR - Failed to create assistant or upload knowledge file: local variable 'vector_store' referenced before assignment
+2024-12-24 15:17:21,377 - INFO - HTTP Request: POST https://api.openai.com/v1/files "HTTP/1.1 200 OK"
+2024-12-24 15:17:21,378 - INFO - Knowledge file uploaded successfully with ID: file-QGqrZsiaZCubnYpgS91pEF
+2024-12-24 15:17:21,378 - WARNING - Failed to create assistant with gpt-3.5-turbo. Retrying...
+2024-12-24 15:17:21,378 - ERROR - Failed to create assistant or upload knowledge file: local variable 'vector_store' referenced before assignment
+2024-12-24 15:19:28,503 - INFO - HTTP Request: POST https://api.openai.com/v1/files "HTTP/1.1 200 OK"
+2024-12-24 15:19:28,504 - INFO - Knowledge file uploaded successfully with ID: file-J5zA6ArTthXt757qZMdVLV
+2024-12-24 15:19:28,832 - INFO - HTTP Request: POST https://api.openai.com/v1/vector_stores "HTTP/1.1 200 OK"
+2024-12-24 15:19:28,834 - WARNING - Failed to create assistant with gpt-3.5-turbo. Retrying...
+2024-12-24 15:19:29,310 - INFO - HTTP Request: POST https://api.openai.com/v1/assistants "HTTP/1.1 400 Bad Request"
+2024-12-24 15:19:29,311 - ERROR - Failed to create assistant or upload knowledge file: Error code: 400 - {'error': {'message': "The requested model 'gpt-4' cannot be used with the 'file_search' tool. Consider using 'gpt-4-turbo-preview', 'gpt-3.5-turbo', or a later model.", 'type': 'invalid_request_error', 'param': 'model', 'code': 'unsupported_model'}}
+2024-12-24 15:21:12,691 - INFO - HTTP Request: POST https://api.openai.com/v1/files "HTTP/1.1 200 OK"
+2024-12-24 15:21:12,692 - INFO - Knowledge file uploaded successfully with ID: file-Mnzq7gfL6QWLybvqiuX1Nm
+2024-12-24 15:21:12,993 - INFO - HTTP Request: POST https://api.openai.com/v1/vector_stores "HTTP/1.1 200 OK"
+2024-12-24 15:21:12,995 - WARNING - Failed to create assistant with gpt-3.5-turbo. Retrying...
+2024-12-24 15:21:15,825 - INFO - HTTP Request: POST https://api.openai.com/v1/assistants "HTTP/1.1 200 OK"
+2024-12-24 15:21:15,873 - INFO - Created a new assistant and saved the ID: asst_pI1j6XLEJhsupg9BqDvihfNs
+2024-12-24 15:21:15,877 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
  * Running on all addresses (0.0.0.0)
  * Running on http://127.0.0.1:8080
  * Running on http://172.31.196.47:8080
-2024-12-24 15:03:05,884 - INFO - [33mPress CTRL+C to quit[0m
-2024-12-24 15:03:06,397 - INFO - 172.31.196.47 - - [24/Dec/2024 15:03:06] "[33mGET / HTTP/1.1[0m" 404 -
-2024-12-24 15:03:29,027 - INFO - HTTP Request: POST https://api.openai.com/v1/threads "HTTP/1.1 400 Bad Request"
-2024-12-24 15:03:29,028 - ERROR - Exception on /start [GET]
+2024-12-24 15:21:15,877 - INFO - [33mPress CTRL+C to quit[0m
+2024-12-24 15:21:16,977 - INFO - 172.31.196.47 - - [24/Dec/2024 15:21:16] "[33mGET / HTTP/1.1[0m" 404 -
+2024-12-24 15:21:21,702 - INFO - HTTP Request: POST https://api.openai.com/v1/threads "HTTP/1.1 200 OK"
+2024-12-24 15:21:21,706 - INFO - 172.31.196.47 - - [24/Dec/2024 15:21:21] "GET /start HTTP/1.1" 200 -
+2024-12-24 15:21:34,452 - INFO - HTTP Request: POST https://api.openai.com/v1/threads "HTTP/1.1 200 OK"
+2024-12-24 15:21:34,454 - INFO - 172.31.196.47 - - [24/Dec/2024 15:21:34] "GET /start HTTP/1.1" 200 -
+2024-12-24 15:21:44,083 - ERROR - Exception on /chat [POST]
 Traceback (most recent call last):
   File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 1455, in wsgi_app
     response = self.full_dispatch_request()
@@ -16,75 +38,7 @@ Traceback (most recent call last):
     rv = self.dispatch_request()
   File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 852, in dispatch_request
     return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
-  File "/home/runner/bluethsitle-gpts-to-website-/main.py", line 68, in start_conversation
-    thread = client.beta.threads.create()  # Create a new conversation thread using OpenAI API
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/resources/beta/threads/threads.py", line 80, in create
-    return self._post(
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 1055, in post
-    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 834, in request
-    return self._request(
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 877, in _request
-    raise self._make_status_error_from_response(err.response) from None
-openai.BadRequestError: Error code: 400 - {'error': {'message': "The v1 Assistants API has been deprecated. Please try again by setting the header 'OpenAI-Beta: assistants=v2'. See the migration guide for more information: https://platform.openai.com/docs/assistants/migration.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_beta'}}
-2024-12-24 15:03:29,029 - INFO - 172.31.196.47 - - [24/Dec/2024 15:03:29] "[35m[1mGET /start HTTP/1.1[0m" 500 -
-2024-12-24 15:09:05,201 - INFO - Loaded existing assistant ID: asst_p5LeXNEfk0SHcGnFUlJOqrx1
-2024-12-24 15:09:05,206 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
- * Running on all addresses (0.0.0.0)
- * Running on http://127.0.0.1:8080
- * Running on http://172.31.196.47:8080
-2024-12-24 15:09:05,206 - INFO - [33mPress CTRL+C to quit[0m
-2024-12-24 15:09:06,439 - INFO - 172.31.196.47 - - [24/Dec/2024 15:09:06] "[33mGET / HTTP/1.1[0m" 404 -
-2024-12-24 15:09:14,267 - INFO - HTTP Request: POST https://api.openai.com/v1/threads "HTTP/1.1 400 Bad Request"
-2024-12-24 15:09:14,269 - ERROR - Exception on /start [GET]
-Traceback (most recent call last):
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 1455, in wsgi_app
-    response = self.full_dispatch_request()
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 869, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 867, in full_dispatch_request
-    rv = self.dispatch_request()
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 852, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
-  File "/home/runner/bluethsitle-gpts-to-website-/main.py", line 71, in start_conversation
-    thread = client.beta.threads.create()  # Create a new conversation thread using OpenAI API
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/resources/beta/threads/threads.py", line 80, in create
-    return self._post(
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 1055, in post
-    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 834, in request
-    return self._request(
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 877, in _request
-    raise self._make_status_error_from_response(err.response) from None
-openai.BadRequestError: Error code: 400 - {'error': {'message': "The v1 Assistants API has been deprecated. Please try again by setting the header 'OpenAI-Beta: assistants=v2'. See the migration guide for more information: https://platform.openai.com/docs/assistants/migration.", 'type': 'invalid_request_error', 'param': None, 'code': 'invalid_beta'}}
-2024-12-24 15:09:14,270 - INFO - 172.31.196.47 - - [24/Dec/2024 15:09:14] "[35m[1mGET /start HTTP/1.1[0m" 500 -
-2024-12-24 15:10:46,020 - INFO - Loaded existing assistant ID: asst_p5LeXNEfk0SHcGnFUlJOqrx1
-2024-12-24 15:10:46,029 - INFO - [31m[1mWARNING: This is a development server. Do not use it in a production deployment. Use a production WSGI server instead.[0m
- * Running on all addresses (0.0.0.0)
- * Running on http://127.0.0.1:8080
- * Running on http://172.31.196.47:8080
-2024-12-24 15:10:46,029 - INFO - [33mPress CTRL+C to quit[0m
-2024-12-24 15:10:46,526 - INFO - 172.31.196.47 - - [24/Dec/2024 15:10:46] "[33mGET / HTTP/1.1[0m" 404 -
-2024-12-24 15:10:53,979 - INFO - HTTP Request: POST https://api.openai.com/v1/threads "HTTP/1.1 400 Bad Request"
-2024-12-24 15:10:53,980 - ERROR - Exception on /start [GET]
-Traceback (most recent call last):
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 1455, in wsgi_app
-    response = self.full_dispatch_request()
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 869, in full_dispatch_request
-    rv = self.handle_user_exception(e)
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 867, in full_dispatch_request
-    rv = self.dispatch_request()
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/flask/app.py", line 852, in dispatch_request
-    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
-  File "/home/runner/bluethsitle-gpts-to-website-/main.py", line 74, in start_conversation
-    thread = client.beta.threads.create()  # Create a new conversation thread using OpenAI API
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/resources/beta/threads/threads.py", line 80, in create
-    return self._post(
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 1055, in post
-    return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 834, in request
-    return self._request(
-  File "/home/runner/bluethsitle-gpts-to-website-/.pythonlibs/lib/python3.10/site-packages/openai/_base_client.py", line 877, in _request
-    raise self._make_status_error_from_response(err.response) from None
-openai.BadRequestError: Error code: 400 - {'error': {'message': 'Unsupported OpenAI-Version header provided: 2024-03-01-preview. (HINT: you can provide any of the following supported versions: 2020-10-01, 2020-11-07. Alternatively, you can simply omit this header to use the default version associated with your account.)', 'type': 'invalid_request_error', 'param': 'headers:openai-version', 'code': None}}
-2024-12-24 15:10:53,981 - INFO - 172.31.196.47 - - [24/Dec/2024 15:10:53] "[35m[1mGET /start HTTP/1.1[0m" 500 -
+  File "/home/runner/bluethsitle-gpts-to-website-/main.py", line 112, in chat
+    message = client.beta.threads.messages.create(
+TypeError: Messages.create() got an unexpected keyword argument 'tools'
+2024-12-24 15:21:44,088 - INFO - 172.31.196.47 - - [24/Dec/2024 15:21:44] "[35m[1mPOST /chat HTTP/1.1[0m" 500 -
