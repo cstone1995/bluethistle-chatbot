@@ -1,0 +1,1 @@
+9999999999{"name": "docx", "version": "0.2.4", "summary": "The docx module creates, reads and writes Microsoft Office Word 2007 docx files", "requires_dist": ["lxml", "Pillow>=2.0"], "requires_python": null, "files": [{"file": "docx-0.2.4.tar.gz", "hash": "sha256:9d7595eac6e86cda0b7136a2995318d039c1f3eaa368a3300805abbbe5dc8877"}], "yanked": false, "_cache_version": "2.0.0"}
