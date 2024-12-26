@@ -1,0 +1,4 @@
+Flask==2.2.3
+openai==0.27.7
+packaging==21.3
+gunicorn==20.1.0
