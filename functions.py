@@ -22,29 +22,15 @@ def create_assistant(client):
             logging.info("Loaded existing assistant ID: %s", assistant_id)
     else:
         try:
-            # Upload the knowledge document
+            # Upload the file to create an assistant
             file = client.files.create(
                 file=open("knowledge.docx", "rb"),
                 purpose='assistants'
             )
             logging.info("Knowledge file uploaded successfully with ID: %s", file.id)
 
-            # Attempt vector store creation
-            try:
-                vector_store = client.beta.vector_stores.create()
-                client.beta.vector_stores.add_files(
-                    vector_store_id=vector_store.id,
-                    file_ids=[file.id]
-                )
-                logging.info("Vector store created with ID: %s", vector_store.id)
-            except Exception as e:
-                logging.error(f"Vector store creation failed: {e}")
-                vector_store = None  # Fallback for assistant creation without vector store
-
-            # Create the assistant
-            assistant = client.beta.assistants.create(
-                name="BlueThistle AI Customer Support Assistant",
-                instructions="""
+            # Modularized instructions for the assistant
+            general_info = """
 You are a knowledgeable customer service assistant for BlueThistle AI. Your primary job is to provide users with comprehensive, accurate, and informative responses to their questions, particularly regarding pricing, chatbot packages, services, contact information, and company details your main goal is to get users to buy our services.
 
 You have access to a document that contains detailed information about BlueThistle AI's offerings, including service packages, pricing, office hours, social media links, policies, and more. Always prioritize using the document's content to provide concise, accurate, and helpful responses. Keep answers very brief, aiming for a maximum of 2 sentences unless the user explicitly asks for more details.
@@ -149,11 +135,47 @@ You have access to a document that contains detailed information about BlueThist
             important_guidelines = """
 ### Important:
 - **Do Not Mention Document**: If you cannot find specific information, do not refer to a document or file. Instead, say: "I'm currently unable to find specific details on that. However, here are some related details that might help." This ensures that no mention of any files or document limitations is communicated to users.
-""",
-                model="gpt-3.5-turbo",
-                tools=[{"type": "code_interpreter"}, {"type": "file_search"}] if vector_store else [{"type": "code_interpreter"}],
-                tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}} if vector_store else None
-            )
+"""
+
+            # Create the assistant with modular instructions
+            try:
+                # Create vector store for the knowledge file
+                vector_store = client.beta.vector_stores.create()
+                client.beta.vector_stores.add_files(
+                    vector_store_id=vector_store.id,
+                    file_ids=[file.id]
+                )
+
+                assistant = client.beta.assistants.create(
+                    name="BlueThistle AI Customer Support Assistant",
+                    instructions=f"{general_info}{key_responsibilities}{communication_guidelines}{additional_guidelines}{important_guidelines}",
+                    model="gpt-3.5-turbo",
+                    tools=[
+                        {"type": "code_interpreter"},
+                        {"type": "file_search"}
+                    ],
+                    tool_resources={
+                        "file_search": {
+                            "vector_store_ids": [vector_store.id]
+                        }
+                    }
+                )
+            except Exception as e:
+                logging.warning("Failed to create assistant with gpt-3.5-turbo. Retrying...")
+                assistant = client.beta.assistants.create(
+                    name="BlueThistle AI Customer Support Assistant",
+                    instructions=f"{general_info}{key_responsibilities}{communication_guidelines}{additional_guidelines}{important_guidelines}",
+                    model="gpt-4-turbo-preview",
+                    tools=[
+                        {"type": "code_interpreter"},
+                        {"type": "file_search"}
+                    ],
+                    tool_resources={
+                        "file_search": {
+                            "vector_store_ids": [vector_store.id]
+                        }
+                    }
+                )
 
             # Save the assistant ID for future use
             with open(assistant_file_path, 'w') as file:
