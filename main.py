@@ -44,9 +44,8 @@ def save_metrics():
     with open(metrics_file_path, 'w') as metrics_file:
         json.dump(metrics, metrics_file)
 
-# Create assistant instance
-client = openai.OpenAI(default_headers={"OpenAI-Beta": "assistants=v2"})
-assistant_id = functions.create_assistant(client)
+# Create assistant instance using helper function
+assistant_id = functions.create_assistant(openai)
 
 @app.route('/start', methods=['GET'])
 def start_conversation():
@@ -84,20 +83,17 @@ def chat():
         # Add user input to transcript
         conversation_transcripts[thread_id].append({"role": "user", "content": user_input})
 
-        # Call OpenAI API
+        # Call OpenAI API to generate response
         start_time = time()
-        response = client.beta.threads.messages.create(
-            thread_id=thread_id,
-            content=user_input,
-            role="user"
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=conversation_transcripts[thread_id]
         )
+        assistant_response = response['choices'][0]['message']['content']
         end_time = time()
 
-        # Get assistant response
-        assistant_response = response['choices'][0]['message']['content']
-        conversation_transcripts[thread_id].append({"role": "assistant", "content": assistant_response})
-
         # Update metrics and transcripts
+        conversation_transcripts[thread_id].append({"role": "assistant", "content": assistant_response})
         metrics["total_messages"] += 1
         response_time = end_time - start_time
         metrics["average_response_time"] = ((metrics["average_response_time"] * (metrics["total_messages"] - 1)) + response_time) / metrics["total_messages"]
@@ -122,3 +118,4 @@ if __name__ == '__main__':
     if not os.path.exists('transcripts'):
         os.makedirs('transcripts')
     app.run(host='0.0.0.0', port=8080)
+
