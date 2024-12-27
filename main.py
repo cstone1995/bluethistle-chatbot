@@ -6,15 +6,18 @@ import openai
 import functions
 import datetime
 import json
+import pkg_resources
 
 # Check if the OpenAI version is correct
 required_version = version.parse("1.1.1")  # Define the minimum required version of OpenAI
-current_version = version.parse(openai.__version__)  # Get the current version of OpenAI
-OPENAI_API_KEY = os.environ['OPENAI_API_KEY']  # Get the OpenAI API key from environment variables
+try:
+    current_version = version.parse(pkg_resources.get_distribution("openai").version)  # Get the current version of OpenAI
+except pkg_resources.DistributionNotFound:
+    raise ImportError("The 'openai' library is not installed. Please install it with 'pip install openai'.")
 
 # Validate the OpenAI version
 if current_version < required_version:
-    raise ValueError(f"Error: OpenAI version {openai.__version__} is less than the required version 1.1.1")
+    raise ValueError(f"Error: OpenAI version {current_version} is less than the required version {required_version}")
 else:
     print("OpenAI version is compatible.")
 
@@ -191,3 +194,4 @@ if __name__ == '__main__':
     if not os.path.exists('transcripts'):
         os.makedirs('transcripts')  # Create the transcripts directory if it doesn't exist
     app.run(host='0.0.0.0', port=8080)  # Run the Flask app on port 8080 and listen on all IP addresses
+
