@@ -4,7 +4,6 @@ from time import time
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
-import functions
 import json
 
 # Logging configuration
@@ -44,13 +43,6 @@ def save_metrics():
     with open(metrics_file_path, 'w') as metrics_file:
         json.dump(metrics, metrics_file)
 
-# Create assistant instance using helper function
-try:
-    assistant_id = functions.create_assistant(openai)
-except Exception as e:
-    logging.error("Failed to initialize assistant: %s", e)
-    raise e
-
 @app.route('/start', methods=['GET'])
 def start_conversation():
     """Start a new conversation."""
@@ -87,12 +79,11 @@ def chat():
         # Add user input to transcript
         conversation_transcripts[thread_id].append({"role": "user", "content": user_input})
 
-        # Call OpenAI API to generate response
+        # Call OpenAI API
         start_time = time()
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            assistant_id=assistant_id,
-            messages=conversation_transcripts[thread_id]
+            messages=conversation_transcripts[thread_id]  # Send full conversation history
         )
         assistant_response = response['choices'][0]['message']['content']
         end_time = time()
