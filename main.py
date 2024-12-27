@@ -45,7 +45,11 @@ def save_metrics():
         json.dump(metrics, metrics_file)
 
 # Create assistant instance using helper function
-assistant_id = functions.create_assistant(openai)
+try:
+    assistant_id = functions.create_assistant(openai)
+except Exception as e:
+    logging.error("Failed to initialize assistant: %s", e)
+    raise e
 
 @app.route('/start', methods=['GET'])
 def start_conversation():
@@ -87,6 +91,7 @@ def chat():
         start_time = time()
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
+            assistant_id=assistant_id,
             messages=conversation_transcripts[thread_id]
         )
         assistant_response = response['choices'][0]['message']['content']
@@ -118,4 +123,3 @@ if __name__ == '__main__':
     if not os.path.exists('transcripts'):
         os.makedirs('transcripts')
     app.run(host='0.0.0.0', port=8080)
-
