@@ -1,6 +1,6 @@
 Flask==2.2.3
 Werkzeug==2.2.3
-openai==1.1.1
+openai==0.27.0
 packaging==21.3
 datetime==4.3
 Flask-CORS
