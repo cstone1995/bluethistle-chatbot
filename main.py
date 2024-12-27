@@ -3,25 +3,19 @@ from time import sleep, time
 from packaging import version
 from flask import Flask, request, jsonify
 import openai
+from openai import OpenAI
 import functions
 import datetime
 import json
-import pkg_resources
-import logging
-
-# Set up logging
-logging.basicConfig(level=logging.DEBUG)
 
 # Check if the OpenAI version is correct
 required_version = version.parse("1.1.1")  # Define the minimum required version of OpenAI
-try:
-    current_version = version.parse(pkg_resources.get_distribution("openai").version)  # Get the current version of OpenAI
-except pkg_resources.DistributionNotFound:
-    raise ImportError("The 'openai' library is not installed. Please install it with 'pip install openai'.")
+current_version = version.parse(openai.__version__)  # Get the current version of OpenAI
+OPENAI_API_KEY = os.environ['OPENAI_API_KEY']  # Get the OpenAI API key from environment variables
 
 # Validate the OpenAI version
 if current_version < required_version:
-    raise ValueError(f"Error: OpenAI version {current_version} is less than the required version {required_version}")
+    raise ValueError(f"Error: OpenAI version {openai.__version__} is less than the required version 1.1.1")
 else:
     print("OpenAI version is compatible.")
 
@@ -32,10 +26,15 @@ app = Flask(__name__)
 VERIFY_TOKEN = 'bluethistle'  # Replace with your custom verification token
 
 # Initialize the OpenAI client with v2 beta header
-client = openai
+client = OpenAI(
+    api_key=OPENAI_API_KEY,
+    default_headers={
+        "OpenAI-Beta": "assistants=v2"
+    }
+)
 
 # Create new assistant or load existing one
-assistant_id = functions.create_assistant()  # Create or load the assistant using a custom function
+assistant_id = functions.create_assistant(client)  # Create or load the assistant using a custom function
 
 # Store customer information and conversation progress
 conversation_progress = {}  # Dictionary to store conversation progress
@@ -83,61 +82,73 @@ def start_conversation():
 # Generate a response to user input
 @app.route('/chat', methods=['POST'])
 def chat():
-    try:
-        # Parse and validate the JSON payload
-        data = request.json
-        if not data or 'thread_id' not in data or 'message' not in data:
-            app.logger.error("Invalid request payload")
-            return jsonify({"error": "Invalid request payload"}), 400
+    data = request.json  # Get the JSON data from the POST request
+    thread_id = data.get('thread_id')  # Extract the thread ID from the request
+    user_input = data.get('message', '')  # Get user input as-is to maintain natural responses
 
-        thread_id = data['thread_id']
-        user_input = data['message']
+    if not thread_id:
+        return jsonify({"error": "Missing thread_id"}), 400
 
-        # Check if thread_id is valid
-        if thread_id not in conversation_expiry:
-            app.logger.error(f"Invalid thread_id: {thread_id}")
-            return jsonify({"error": "Invalid thread_id"}), 400
-
-        current_time = time()
+    current_time = time()
+    if thread_id in conversation_expiry:
         if current_time > conversation_expiry[thread_id]:
-            app.logger.error(f"Conversation expired for thread_id: {thread_id}")
+            del conversation_expiry[thread_id]
+            if thread_id in conversation_progress:
+                del conversation_progress[thread_id]
+            if thread_id in conversation_transcripts:
+                del conversation_transcripts[thread_id]
             return jsonify({"error": "Conversation has expired."}), 400
+    else:
+        return jsonify({"error": "Invalid thread_id."}), 400
 
-        # Record the user input
-        conversation_transcripts[thread_id].append({"role": "user", "content": user_input})
-        start_time = time()
+    conversation_transcripts[thread_id].append({"role": "user", "content": user_input})
+    start_time = time()
 
-        # Simulate OpenAI API response for testing
-        response = {"content": "This is a simulated response"}  # Replace with real OpenAI call
+    message = client.beta.threads.messages.create(
+        thread_id=thread_id,
+        role="user",
+        content=user_input
+    )
+    
+    run = client.beta.threads.runs.create(
+        thread_id=thread_id,
+        assistant_id=assistant_id,
+        tools=[{"type": "file_search"}, {"type": "code_interpreter"}]
+    )
 
-        # Calculate response time
-        end_time = time()
-        response_time = end_time - start_time
-        metrics["total_messages"] += 1
-        metrics["average_response_time"] = (
-            (metrics["average_response_time"] * (metrics["total_messages"] - 1)) + response_time
-        ) / metrics["total_messages"]
+    while True:
+        run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
+        if run_status.status == 'completed':
+            break
+        sleep(1)
 
-        # Record assistant response
-        conversation_transcripts[thread_id].append({"role": "assistant", "content": response["content"]})
+    end_time = time()
+    response_time = end_time - start_time
+    metrics["total_messages"] += 1
+    metrics["average_response_time"] = ((metrics["average_response_time"] * (metrics["total_messages"] - 1)) + response_time) / metrics["total_messages"]
+    save_metrics()
 
-        return jsonify({"response": response["content"]})
+    messages = client.beta.threads.messages.list(thread_id=thread_id)
+    response = messages.data[0].content[0].text.value
 
-    except Exception as e:
-        app.logger.error(f"Error in /chat route: {str(e)}")
-        return jsonify({"error": "Internal Server Error"}), 500
+    if "I couldn't find" in response and "document" in response:
+        response = "I'm currently unable to find specific details on that. However, here are some related details that might help."
 
-# Keep-alive endpoint
+    conversation_transcripts[thread_id].append({"role": "assistant", "content": response})
+
+    with open(f'transcripts/{thread_id}.json', 'w') as transcript_file:
+        json.dump(conversation_transcripts[thread_id], transcript_file)
+
+    return jsonify({"response": response})
+
 @app.route('/ping', methods=['GET'])
 def keep_alive():
     return "I am alive!", 200
 
-# Endpoint to get performance metrics
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
-    return jsonify(metrics)  # Return the performance metrics as a JSON response
+    return jsonify(metrics)
 
-# Endpoint to track link clicks
 @app.route('/link_click', methods=['POST'])
 def track_link_click():
     data = request.json
@@ -146,20 +157,17 @@ def track_link_click():
     if link:
         if link not in metrics["links_clicked"]:
             metrics["links_clicked"][link] = 0
-        metrics["links_clicked"][link] += 1  # Increment the click count for the link
-        save_metrics()  # Save updated metrics to the file
+        metrics["links_clicked"][link] += 1
+        save_metrics()
         return jsonify({"message": "Link click recorded"}), 200
     else:
         return jsonify({"error": "Missing link data"}), 400
 
-# Save metrics to a file
 def save_metrics():
     with open(metrics_file_path, 'w') as metrics_file:
-        json.dump(metrics, metrics_file)  # Save metrics to a JSON file
+        json.dump(metrics, metrics_file)
 
-# Run the server
 if __name__ == '__main__':
     if not os.path.exists('transcripts'):
-        os.makedirs('transcripts')  # Create the transcripts directory if it doesn't exist
-    app.run(host='0.0.0.0', port=8080)  # Run the Flask app on port 8080 and listen on all IP addresses
-
+        os.makedirs('transcripts')
+    app.run(host='0.0.0.0', port=8080)
