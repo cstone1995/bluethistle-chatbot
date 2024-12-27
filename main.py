@@ -2,6 +2,7 @@ import os
 from time import sleep, time
 from packaging import version
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Import for handling CORS
 import openai
 from openai import OpenAI
 import functions
@@ -22,6 +23,9 @@ else:
 # Start Flask app
 app = Flask(__name__)
 
+# Enable CORS for the entire app
+CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for testing; restrict origins for production
+
 # Verification token for Facebook webhook
 VERIFY_TOKEN = 'bluethistle'  # Replace with your custom verification token
 
@@ -41,9 +45,9 @@ conversation_progress = {}  # Dictionary to store conversation progress
 conversation_expiry = {}  # Dictionary to store conversation expiry timestamps
 conversation_transcripts = {}  # Dictionary to store conversation transcripts
 metrics = {
-    "total_conversations": 0, 
-    "total_messages": 0, 
-    "average_response_time": 0, 
+    "total_conversations": 0,
+    "total_messages": 0,
+    "average_response_time": 0,
     "links_clicked": {}  # Metrics to track link clicks for each link
 }  # Metrics to track bot performance
 
@@ -56,7 +60,6 @@ if os.path.exists(metrics_file_path):
 # Webhook verification route for Facebook
 @app.route('/webhook', methods=['GET'])
 def verify_webhook():
-    # Facebook webhook verification
     token_sent = request.args.get('hub.verify_token')  # Get the token sent by Facebook
     challenge = request.args.get('hub.challenge')  # Get the challenge code sent by Facebook
 
@@ -86,15 +89,12 @@ def chat():
     thread_id = data.get('thread_id')  # Extract the thread ID from the request
     user_input = data.get('message', '')  # Get user input as-is to maintain natural responses
 
-    # Check if the thread_id is missing
     if not thread_id:
         return jsonify({"error": "Missing thread_id"}), 400  # Return an error if thread ID is not provided
 
-    # Check if the conversation is still valid (within 7 days)
-    current_time = time()  # Get the current time
+    current_time = time()
     if thread_id in conversation_expiry:
         if current_time > conversation_expiry[thread_id]:
-            # If conversation has expired, remove the thread data
             del conversation_expiry[thread_id]
             if thread_id in conversation_progress:
                 del conversation_progress[thread_id]
@@ -104,70 +104,54 @@ def chat():
     else:
         return jsonify({"error": "Invalid thread_id."}), 400  # Return an error if thread ID is invalid
 
-    # Record the user message in the transcript
     conversation_transcripts[thread_id].append({"role": "user", "content": user_input})
-    start_time = time()  # Record the time before sending the message to track response time
+    start_time = time()
 
-    # Create a new message in the conversation thread
     message = client.beta.threads.messages.create(
         thread_id=thread_id,
         role="user",
         content=user_input
     )
-    
-    # Create a run with the configured tools
+
     run = client.beta.threads.runs.create(
         thread_id=thread_id,
         assistant_id=assistant_id,
-        tools=[
-            {"type": "file_search"},
-            {"type": "code_interpreter"}
-        ]
+        tools=[{"type": "file_search"}, {"type": "code_interpreter"}]
     )
 
-    # Wait for the assistant to finish processing the message
     while True:
-        run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)  # Retrieve the run status
+        run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
         if run_status.status == 'completed':
-            break  # Exit the loop if the run is completed
-        sleep(1)  # Wait for 1 second before checking the status again
+            break
+        sleep(1)
 
-    # Record the time after receiving the response to calculate response time
     end_time = time()
-    response_time = end_time - start_time  # Calculate the response time for this interaction
-    metrics["total_messages"] += 1  # Increment the total message count
-    # Update average response time
+    response_time = end_time - start_time
+    metrics["total_messages"] += 1
     metrics["average_response_time"] = ((metrics["average_response_time"] * (metrics["total_messages"] - 1)) + response_time) / metrics["total_messages"]
-    save_metrics()  # Save updated metrics to the file
+    save_metrics()
 
-    # Retrieve the messages after the run is completed
     messages = client.beta.threads.messages.list(thread_id=thread_id)
-    response = messages.data[0].content[0].text.value  # Extract the response text from the messages
+    response = messages.data[0].content[0].text.value
 
-    # Modify the response to remove any mention of not finding information in a file
     if "I couldn't find" in response and "document" in response:
         response = "I'm currently unable to find specific details on that. However, here are some related details that might help."
 
-    # Record the assistant's response in the transcript
     conversation_transcripts[thread_id].append({"role": "assistant", "content": response})
 
-    # Save transcript to a file (optional)
     with open(f'transcripts/{thread_id}.json', 'w') as transcript_file:
-        json.dump(conversation_transcripts[thread_id], transcript_file)  # Save the transcript to a JSON file
+        json.dump(conversation_transcripts[thread_id], transcript_file)
 
-    return jsonify({"response": response})  # Return the assistant's response as a JSON object
+    return jsonify({"response": response})
 
-# Keep-alive endpoint
 @app.route('/ping', methods=['GET'])
 def keep_alive():
     return "I am alive!", 200
 
-# Endpoint to get performance metrics
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
-    return jsonify(metrics)  # Return the performance metrics as a JSON response
+    return jsonify(metrics)
 
-# Endpoint to track link clicks
 @app.route('/link_click', methods=['POST'])
 def track_link_click():
     data = request.json
@@ -176,19 +160,17 @@ def track_link_click():
     if link:
         if link not in metrics["links_clicked"]:
             metrics["links_clicked"][link] = 0
-        metrics["links_clicked"][link] += 1  # Increment the click count for the link
-        save_metrics()  # Save updated metrics to the file
+        metrics["links_clicked"][link] += 1
+        save_metrics()
         return jsonify({"message": "Link click recorded"}), 200
     else:
         return jsonify({"error": "Missing link data"}), 400
 
-# Save metrics to a file
 def save_metrics():
     with open(metrics_file_path, 'w') as metrics_file:
-        json.dump(metrics, metrics_file)  # Save metrics to a JSON file
+        json.dump(metrics, metrics_file)
 
-# Run the server
 if __name__ == '__main__':
     if not os.path.exists('transcripts'):
-        os.makedirs('transcripts')  # Create the transcripts directory if it doesn't exist
-    app.run(host='0.0.0.0', port=8080)  # Run the Flask app on port 8080 and listen on all IP addresses
+        os.makedirs('transcripts')
+    app.run(host='0.0.0.0', port=8080)
