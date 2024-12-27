@@ -24,16 +24,19 @@ else:
 # Start Flask app
 app = Flask(__name__)
 
-# Verification token for Facebook webhook
-VERIFY_TOKEN = 'bluethistle'  # Replace with your custom verification token
+# Get the OpenAI API key from environment variables
+OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+if not OPENAI_API_KEY:
+    raise ValueError("The 'OPENAI_API_KEY' environment variable is not set.")
 
 # Initialize the OpenAI client with v2 beta header
-client = openai(
+client = OpenAI(
     api_key=OPENAI_API_KEY,
     default_headers={
         "OpenAI-Beta": "assistants=v2"
     }
 )
+
 
 # Create new assistant or load existing one
 assistant_id = functions.create_assistant(client)  # Create or load the assistant using a custom function
