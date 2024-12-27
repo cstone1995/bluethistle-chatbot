@@ -6,13 +6,12 @@ import logging
 # Set up logging to track the assistant's behavior
 logging.basicConfig(level=logging.INFO, filename='assistant_debug.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
 
-def create_assistant():
-    # Check if the environment variable for the OpenAI API key is set
-    OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-    if not OPENAI_API_KEY:
-        raise ValueError("The 'OPENAI_API_KEY' environment variable is not set.")
-    
-    openai.api_key = OPENAI_API_KEY
+def create_assistant(client):
+    # Ensure client has correct headers
+    if "OpenAI-Beta" not in client.default_headers:
+        client.default_headers.update({
+            "OpenAI-Beta": "assistants=v2"
+        })
     
     assistant_file_path = 'assistant.json'
 
@@ -23,41 +22,44 @@ def create_assistant():
             logging.info("Loaded existing assistant ID: %s", assistant_id)
     else:
         try:
-            # Upload the file to create an assistant
-            file = openai.File.create(
+            # Upload the knowledge document
+            file = client.files.create(
                 file=open("knowledge.docx", "rb"),
-                purpose='answers'
+                purpose='assistants'
             )
             logging.info("Knowledge file uploaded successfully with ID: %s", file.id)
 
-            # Modularized instructions for the assistant
-            general_info = """
-You are a knowledgeable customer service assistant for BlueThistle AI. Your primary job is to provide users with comprehensive, accurate, and informative responses to their questions, particularly regarding pricing, chatbot packages, services, contact information, and company details. Your main goal is to get users to buy our services.
+            # Attempt vector store creation
+            try:
+                vector_store = client.beta.vector_stores.create()
+                client.beta.vector_stores.add_files(
+                    vector_store_id=vector_store.id,
+                    file_ids=[file.id]
+                )
+                logging.info("Vector store created with ID: %s", vector_store.id)
+            except Exception as e:
+                logging.error(f"Vector store creation failed: {e}")
+                vector_store = None  # Fallback for assistant creation without vector store
 
-You have access to a document that contains detailed information about BlueThistle AI's offerings, including service packages, pricing, office hours, social media links, policies, and more. Always prioritize using the document's content to provide concise, accurate, and helpful responses. Keep answers very brief, aiming for a maximum of 2 sentences unless the user explicitly asks for more details.
-"""
-
-            # Create the assistant with modular instructions
-            assistant = openai.Answer.create(
+            # Create the assistant
+            assistant = client.beta.assistants.create(
                 name="BlueThistle AI Customer Support Assistant",
-                instructions=general_info,
-                file_ids=[file.id],
-                search_model="davinci",
-                model="curie",
-                max_tokens=1000,
-                stop=["\n", "User:"],
+                instructions="""
+You are a knowledgeable customer service assistant for BlueThistle AI. Your primary job is to provide users with comprehensive, accurate, and informative responses to their questions, particularly regarding pricing, chatbot packages, services, contact information, and company details. Your main goal is to get users to buy our services.
+""",
+                model="gpt-3.5-turbo",
+                tools=[{"type": "code_interpreter"}, {"type": "file_search"}] if vector_store else [{"type": "code_interpreter"}],
+                tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}} if vector_store else None
             )
 
             # Save the assistant ID for future use
             with open(assistant_file_path, 'w') as file:
-                json.dump({'assistant_id': assistant['id']}, file)
-                logging.info("Created a new assistant and saved the ID: %s", assistant['id'])
+                json.dump({'assistant_id': assistant.id}, file)
+                logging.info("Created a new assistant and saved the ID: %s", assistant.id)
 
-            assistant_id = assistant['id']
+            assistant_id = assistant.id
         except Exception as e:
             logging.error("Failed to create assistant or upload knowledge file: %s", str(e))
             raise e
 
     return assistant_id
-
-
