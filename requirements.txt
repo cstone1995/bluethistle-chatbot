@@ -2,3 +2,5 @@ Flask==2.2.5
 Werkzeug==2.2.3
 Flask-CORS==3.0.10
 openai==0.27.8
+packaging==23.1
+
