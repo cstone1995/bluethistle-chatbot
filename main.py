@@ -2,6 +2,7 @@ import os
 from time import sleep, time
 from packaging import version
 from flask import Flask, request, jsonify
+from flask_cors import CORS  # Import for handling CORS
 import openai
 from openai import OpenAI
 import functions
@@ -21,6 +22,7 @@ else:
 
 # Start Flask app
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes
 
 # Verification token for Facebook webhook
 VERIFY_TOKEN = 'bluethistle'  # Replace with your custom verification token
@@ -86,12 +88,15 @@ def chat():
     thread_id = data.get('thread_id')  # Extract the thread ID from the request
     user_input = data.get('message', '')  # Get user input as-is to maintain natural responses
 
+    # Check if the thread_id is missing
     if not thread_id:
-        return jsonify({"error": "Missing thread_id"}), 400
+        return jsonify({"error": "Missing thread_id"}), 400  # Return an error if thread ID is not provided
 
-    current_time = time()
+    # Check if the conversation is still valid (within 7 days)
+    current_time = time()  # Get the current time
     if thread_id in conversation_expiry:
         if current_time > conversation_expiry[thread_id]:
+            # If conversation has expired, remove the thread data
             del conversation_expiry[thread_id]
             if thread_id in conversation_progress:
                 del conversation_progress[thread_id]
@@ -99,56 +104,72 @@ def chat():
                 del conversation_transcripts[thread_id]
             return jsonify({"error": "Conversation has expired."}), 400
     else:
-        return jsonify({"error": "Invalid thread_id."}), 400
+        return jsonify({"error": "Invalid thread_id."}), 400  # Return an error if thread ID is invalid
 
+    # Record the user message in the transcript
     conversation_transcripts[thread_id].append({"role": "user", "content": user_input})
-    start_time = time()
+    start_time = time()  # Record the time before sending the message to track response time
 
+    # Create a new message in the conversation thread
     message = client.beta.threads.messages.create(
         thread_id=thread_id,
         role="user",
         content=user_input
     )
     
+    # Create a run with the configured tools
     run = client.beta.threads.runs.create(
         thread_id=thread_id,
         assistant_id=assistant_id,
-        tools=[{"type": "file_search"}, {"type": "code_interpreter"}]
+        tools=[
+            {"type": "file_search"},
+            {"type": "code_interpreter"}
+        ]
     )
 
+    # Wait for the assistant to finish processing the message
     while True:
-        run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
+        run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)  # Retrieve the run status
         if run_status.status == 'completed':
-            break
-        sleep(1)
+            break  # Exit the loop if the run is completed
+        sleep(1)  # Wait for 1 second before checking the status again
 
+    # Record the time after receiving the response to calculate response time
     end_time = time()
-    response_time = end_time - start_time
-    metrics["total_messages"] += 1
+    response_time = end_time - start_time  # Calculate the response time for this interaction
+    metrics["total_messages"] += 1  # Increment the total message count
+    # Update average response time
     metrics["average_response_time"] = ((metrics["average_response_time"] * (metrics["total_messages"] - 1)) + response_time) / metrics["total_messages"]
-    save_metrics()
+    save_metrics()  # Save updated metrics to the file
 
+    # Retrieve the messages after the run is completed
     messages = client.beta.threads.messages.list(thread_id=thread_id)
-    response = messages.data[0].content[0].text.value
+    response = messages.data[0].content[0].text.value  # Extract the response text from the messages
 
+    # Modify the response to remove any mention of not finding information in a file
     if "I couldn't find" in response and "document" in response:
         response = "I'm currently unable to find specific details on that. However, here are some related details that might help."
 
+    # Record the assistant's response in the transcript
     conversation_transcripts[thread_id].append({"role": "assistant", "content": response})
 
+    # Save transcript to a file (optional)
     with open(f'transcripts/{thread_id}.json', 'w') as transcript_file:
-        json.dump(conversation_transcripts[thread_id], transcript_file)
+        json.dump(conversation_transcripts[thread_id], transcript_file)  # Save the transcript to a JSON file
 
-    return jsonify({"response": response})
+    return jsonify({"response": response})  # Return the assistant's response as a JSON object
 
+# Keep-alive endpoint
 @app.route('/ping', methods=['GET'])
 def keep_alive():
     return "I am alive!", 200
 
+# Endpoint to get performance metrics
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
-    return jsonify(metrics)
+    return jsonify(metrics)  # Return the performance metrics as a JSON response
 
+# Endpoint to track link clicks
 @app.route('/link_click', methods=['POST'])
 def track_link_click():
     data = request.json
@@ -156,18 +177,20 @@ def track_link_click():
 
     if link:
         if link not in metrics["links_clicked"]:
-            metrics["links_clicked"][link] = 0
-        metrics["links_clicked"][link] += 1
-        save_metrics()
+            metrics["links_clicked"][link] = 0  # Increment the click count for the link
+        save_metrics()  # Save updated metrics to the file
         return jsonify({"message": "Link click recorded"}), 200
     else:
         return jsonify({"error": "Missing link data"}), 400
 
+# Save metrics to a file
 def save_metrics():
     with open(metrics_file_path, 'w') as metrics_file:
-        json.dump(metrics, metrics_file)
+        json.dump(metrics, metrics_file)  # Save metrics to a JSON file
 
+# Run the server
 if __name__ == '__main__':
     if not os.path.exists('transcripts'):
-        os.makedirs('transcripts')
-    app.run(host='0.0.0.0', port=8080)
+        os.makedirs('transcripts')  # Create the transcripts directory if it doesn't exist
+    app.run(host='0.0.0.0', port=8080)  # Run the Flask app on port 8080 and listen on all IP addresses
+
