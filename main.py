@@ -28,7 +28,7 @@ app = Flask(__name__)
 VERIFY_TOKEN = 'bluethistle'  # Replace with your custom verification token
 
 # Initialize the OpenAI client with v2 beta header
-client = OpenAI(
+client = openai(
     api_key=OPENAI_API_KEY,
     default_headers={
         "OpenAI-Beta": "assistants=v2"
