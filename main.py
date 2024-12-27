@@ -50,7 +50,19 @@ def start_conversation():
         logging.debug("Starting a new conversation...")
         thread_id = str(int(time()))  # Generate a unique thread ID
         conversation_expiry[thread_id] = time() + 7 * 24 * 60 * 60  # Expire in 7 days
-        conversation_transcripts[thread_id] = [{"role": "system", "content": "You are a helpful assistant."}]
+
+        # Add system instructions for the assistant
+        conversation_transcripts[thread_id] = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a knowledgeable customer service assistant for Bluethistle AI. "
+                    "Answer questions accurately and concisely based on company offerings, pricing, and contact information. "
+                    "Refer users to official resources when necessary."
+                )
+            }
+        ]
+        
         metrics["total_conversations"] += 1
         save_metrics()
         logging.debug(f"Thread created: {thread_id}")
@@ -83,7 +95,7 @@ def chat():
         start_time = time()
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=conversation_transcripts[thread_id]  # Send full conversation history
+            messages=conversation_transcripts[thread_id],  # Send full conversation history
         )
         assistant_response = response['choices'][0]['message']['content']
         end_time = time()
@@ -92,9 +104,12 @@ def chat():
         conversation_transcripts[thread_id].append({"role": "assistant", "content": assistant_response})
         metrics["total_messages"] += 1
         response_time = end_time - start_time
-        metrics["average_response_time"] = ((metrics["average_response_time"] * (metrics["total_messages"] - 1)) + response_time) / metrics["total_messages"]
+        metrics["average_response_time"] = (
+            (metrics["average_response_time"] * (metrics["total_messages"] - 1)) + response_time
+        ) / metrics["total_messages"]
         save_metrics()
 
+        logging.debug(f"Assistant response sent for thread ID {thread_id}.")
         return jsonify({"response": assistant_response}), 200
     except Exception as e:
         logging.exception("Error in /chat endpoint.")
@@ -114,3 +129,4 @@ if __name__ == '__main__':
     if not os.path.exists('transcripts'):
         os.makedirs('transcripts')
     app.run(host='0.0.0.0', port=8080)
+
