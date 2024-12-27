@@ -19,16 +19,14 @@ if current_version < required_version:
 else:
     print("OpenAI version is compatible.")
 
+# Set OpenAI API key
+openai.api_key = OPENAI_API_KEY
+
 # Start Flask app
 app = Flask(__name__)
 
 # Enable CORS for the entire app
-
-# Enable CORS for specific origin
 CORS(app, resources={r"/*": {"origins": "https://bluethistleai.co.uk"}})
-
-# Set OpenAI API key
-openai.api_key = OPENAI_API_KEY
 
 # Create new assistant or load existing one
 assistant_id = functions.create_assistant(openai)  # Pass `openai` directly to the helper function
@@ -62,6 +60,7 @@ def start_conversation():
         save_metrics()
         return jsonify({"thread_id": thread_id}), 200
     except Exception as e:
+        print(f"Error in /start: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/chat', methods=['POST'])
@@ -81,9 +80,7 @@ def chat():
         start_time = time()
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=[
-                {"role": "user", "content": user_input}
-            ]
+            messages=conversation_transcripts[thread_id]
         )
         assistant_response = response.choices[0].message['content']
         conversation_transcripts[thread_id].append({"role": "assistant", "content": assistant_response})
@@ -93,6 +90,7 @@ def chat():
         save_metrics()
         return jsonify({"response": assistant_response}), 200
     except Exception as e:
+        print(f"Error in /chat: {e}")
         return jsonify({"error": str(e)}), 500
 
 @app.route('/ping', methods=['GET'])
@@ -111,3 +109,4 @@ if __name__ == '__main__':
     if not os.path.exists('transcripts'):
         os.makedirs('transcripts')
     app.run(host='0.0.0.0', port=8080)
+
