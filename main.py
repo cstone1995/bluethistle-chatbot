@@ -1,18 +1,17 @@
 import os
-from time import sleep, time
-from packaging import version
+import logging
+from time import time
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
 import functions
 import json
-import logging
 
 # Logging configuration
 logging.basicConfig(level=logging.DEBUG)
 
-# Check if the OpenAI version is compatible
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+# OpenAI API Key
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 if not OPENAI_API_KEY:
     raise ValueError("OPENAI_API_KEY is not set in environment variables.")
 
@@ -22,10 +21,10 @@ openai.api_key = OPENAI_API_KEY
 # Start Flask app
 app = Flask(__name__)
 
-# Enable CORS for the entire app
+# Enable CORS
 CORS(app, resources={r"/*": {"origins": "https://bluethistleai.co.uk"}})
 
-# Initialize metrics and conversation data
+# Metrics and conversation management
 conversation_expiry = {}
 conversation_transcripts = {}
 metrics = {
@@ -35,50 +34,53 @@ metrics = {
 }
 metrics_file_path = 'metrics.json'
 
-# Load existing metrics if available
+# Load metrics from file
 if os.path.exists(metrics_file_path):
     with open(metrics_file_path, 'r') as metrics_file:
         metrics = json.load(metrics_file)
 
-# Helper function to save metrics
+# Save metrics to file
 def save_metrics():
     with open(metrics_file_path, 'w') as metrics_file:
         json.dump(metrics, metrics_file)
 
 @app.route('/start', methods=['GET'])
 def start_conversation():
-    """Start a new conversation and return a thread_id."""
-    logging.debug("Starting a new conversation...")
-    thread_id = str(int(time()))  # Generate a unique thread ID based on timestamp
-    conversation_expiry[thread_id] = time() + 7 * 24 * 60 * 60  # Expiry in 7 days
-    conversation_transcripts[thread_id] = []  # Initialize transcript
-    metrics["total_conversations"] += 1
-    save_metrics()
-    logging.debug(f"Thread created: {thread_id}")
-    return jsonify({"thread_id": thread_id}), 200
+    """Start a new conversation."""
+    try:
+        logging.debug("Starting a new conversation...")
+        thread_id = str(int(time()))  # Generate a unique thread ID
+        conversation_expiry[thread_id] = time() + 7 * 24 * 60 * 60  # Expire in 7 days
+        conversation_transcripts[thread_id] = [{"role": "system", "content": "You are a helpful assistant."}]
+        metrics["total_conversations"] += 1
+        save_metrics()
+        logging.debug(f"Thread created: {thread_id}")
+        return jsonify({"thread_id": thread_id}), 200
+    except Exception as e:
+        logging.exception("Error starting conversation.")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    """Handle chat messages from users."""
+    """Handle chat requests."""
     try:
         data = request.json
         thread_id = data.get('thread_id')
         user_input = data.get('message', '')
 
         if not thread_id or not user_input:
-            logging.error("Missing thread_id or message in request.")
+            logging.error("Missing thread_id or message.")
             return jsonify({"error": "Missing thread_id or message"}), 400
 
-        # Check if the thread ID is valid and not expired
-        current_time = time()
-        if thread_id not in conversation_expiry or current_time > conversation_expiry[thread_id]:
+        # Validate thread ID and expiry
+        if thread_id not in conversation_expiry or time() > conversation_expiry[thread_id]:
             logging.error("Invalid or expired thread_id.")
             return jsonify({"error": "Conversation has expired."}), 400
 
-        # Append user message to transcript
+        # Add user input to transcript
         conversation_transcripts[thread_id].append({"role": "user", "content": user_input})
 
-        # Call OpenAI API to generate a response
+        # Call OpenAI API
         start_time = time()
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
@@ -87,7 +89,7 @@ def chat():
         assistant_response = response['choices'][0]['message']['content']
         end_time = time()
 
-        # Update metrics
+        # Update metrics and transcripts
         conversation_transcripts[thread_id].append({"role": "assistant", "content": assistant_response})
         metrics["total_messages"] += 1
         response_time = end_time - start_time
@@ -101,12 +103,12 @@ def chat():
 
 @app.route('/ping', methods=['GET'])
 def keep_alive():
-    """Health check endpoint."""
+    """Health check."""
     return "I am alive!", 200
 
 @app.route('/metrics', methods=['GET'])
 def get_metrics():
-    """Return chatbot performance metrics."""
+    """Get chatbot metrics."""
     return jsonify(metrics), 200
 
 if __name__ == '__main__':
