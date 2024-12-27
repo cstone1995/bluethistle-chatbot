@@ -31,7 +31,7 @@ VERIFY_TOKEN = 'bluethistle'  # Replace with your custom verification token
 client = openai
 
 # Create new assistant or load existing one
-assistant_id = functions.create_assistant(client)  # Create or load the assistant using a custom function
+assistant_id = functions.create_assistant()  # Create or load the assistant using a custom function
 
 # Store customer information and conversation progress
 conversation_progress = {}  # Dictionary to store conversation progress
