@@ -23,7 +23,9 @@ else:
 app = Flask(__name__)
 
 # Enable CORS for the entire app
-CORS(app, resources={r"/*": {"origins": "*"}})  # Allow all origins for testing; restrict origins for production
+
+# Enable CORS for specific origin
+CORS(app, resources={r"/*": {"origins": "https://bluethistleai.co.uk"}})
 
 # Set OpenAI API key
 openai.api_key = OPENAI_API_KEY
