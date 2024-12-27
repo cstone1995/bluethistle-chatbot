@@ -44,6 +44,10 @@ def save_metrics():
     with open(metrics_file_path, 'w') as metrics_file:
         json.dump(metrics, metrics_file)
 
+# Create assistant instance
+client = openai.OpenAI(default_headers={"OpenAI-Beta": "assistants=v2"})
+assistant_id = functions.create_assistant(client)
+
 @app.route('/start', methods=['GET'])
 def start_conversation():
     """Start a new conversation."""
@@ -82,15 +86,18 @@ def chat():
 
         # Call OpenAI API
         start_time = time()
-        response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
-            messages=conversation_transcripts[thread_id]
+        response = client.beta.threads.messages.create(
+            thread_id=thread_id,
+            content=user_input,
+            role="user"
         )
-        assistant_response = response['choices'][0]['message']['content']
         end_time = time()
 
-        # Update metrics and transcripts
+        # Get assistant response
+        assistant_response = response['choices'][0]['message']['content']
         conversation_transcripts[thread_id].append({"role": "assistant", "content": assistant_response})
+
+        # Update metrics and transcripts
         metrics["total_messages"] += 1
         response_time = end_time - start_time
         metrics["average_response_time"] = ((metrics["average_response_time"] * (metrics["total_messages"] - 1)) + response_time) / metrics["total_messages"]
