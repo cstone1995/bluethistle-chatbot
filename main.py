@@ -9,7 +9,7 @@ import json
 import pkg_resources
 
 # Check if the OpenAI version is correct
-required_version = version.parse("0.27.0")  # Define the minimum required version of OpenAI
+required_version = version.parse("1.1.1")  # Define the minimum required version of OpenAI
 try:
     current_version = version.parse(pkg_resources.get_distribution("openai").version)  # Get the current version of OpenAI
 except pkg_resources.DistributionNotFound:
@@ -24,19 +24,11 @@ else:
 # Start Flask app
 app = Flask(__name__)
 
-# Get the OpenAI API key from environment variables
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
-if not OPENAI_API_KEY:
-    raise ValueError("The 'OPENAI_API_KEY' environment variable is not set.")
+# Verification token for Facebook webhook
+VERIFY_TOKEN = 'bluethistle'  # Replace with your custom verification token
 
 # Initialize the OpenAI client with v2 beta header
-client = openai.OpenAI(
-    api_key=OPENAI_API_KEY,
-    default_headers={
-        "OpenAI-Beta": "assistants=v2"
-    }
-)
-
+client = openai
 
 # Create new assistant or load existing one
 assistant_id = functions.create_assistant(client)  # Create or load the assistant using a custom function
@@ -197,4 +189,5 @@ if __name__ == '__main__':
     if not os.path.exists('transcripts'):
         os.makedirs('transcripts')  # Create the transcripts directory if it doesn't exist
     app.run(host='0.0.0.0', port=8080)  # Run the Flask app on port 8080 and listen on all IP addresses
+
 
