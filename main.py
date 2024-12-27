@@ -30,7 +30,7 @@ if not OPENAI_API_KEY:
     raise ValueError("The 'OPENAI_API_KEY' environment variable is not set.")
 
 # Initialize the OpenAI client with v2 beta header
-client = OpenAI(
+client = openai.OpenAI(
     api_key=OPENAI_API_KEY,
     default_headers={
         "OpenAI-Beta": "assistants=v2"
