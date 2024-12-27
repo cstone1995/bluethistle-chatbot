@@ -1,4 +1,5 @@
 Flask==2.2.3
+Werkzeug==2.2.3
 openai==1.1.1
 packaging==21.3
 datetime==4.3
