@@ -2,7 +2,6 @@ import os
 from time import sleep, time
 from packaging import version
 from flask import Flask, request, jsonify
-from flask_cors import CORS  # Import for handling CORS
 import openai
 from openai import OpenAI
 import functions
@@ -22,7 +21,6 @@ else:
 
 # Start Flask app
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "*"}})  # Enable CORS for all routes
 
 # Verification token for Facebook webhook
 VERIFY_TOKEN = 'bluethistle'  # Replace with your custom verification token
@@ -177,7 +175,8 @@ def track_link_click():
 
     if link:
         if link not in metrics["links_clicked"]:
-            metrics["links_clicked"][link] = 0  # Increment the click count for the link
+            metrics["links_clicked"][link] = 0
+        metrics["links_clicked"][link] += 1  # Increment the click count for the link
         save_metrics()  # Save updated metrics to the file
         return jsonify({"message": "Link click recorded"}), 200
     else:
@@ -193,4 +192,3 @@ if __name__ == '__main__':
     if not os.path.exists('transcripts'):
         os.makedirs('transcripts')  # Create the transcripts directory if it doesn't exist
     app.run(host='0.0.0.0', port=8080)  # Run the Flask app on port 8080 and listen on all IP addresses
-
