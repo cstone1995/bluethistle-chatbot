@@ -5,7 +5,6 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
 import functions
-import datetime
 import json
 import logging
 
@@ -85,7 +84,7 @@ def chat():
             model="gpt-3.5-turbo",
             messages=conversation_transcripts[thread_id]
         )
-        assistant_response = response.choices[0].message['content']
+        assistant_response = response['choices'][0]['message']['content']
         end_time = time()
 
         # Update metrics
