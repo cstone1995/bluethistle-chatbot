@@ -1,11 +1,11 @@
 import os
 import logging
+import docx
 from time import time
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
 import json
-import functions  # Import helper functions
 
 # Logging configuration
 logging.basicConfig(level=logging.DEBUG)
@@ -17,6 +17,18 @@ if not OPENAI_API_KEY:
 
 # Set OpenAI API key
 openai.api_key = OPENAI_API_KEY
+
+# Knowledge file path
+knowledge_path = "/opt/render/project/src/knowledge.docx"
+
+# Load the knowledge content from the docx file
+try:
+    doc = docx.Document(knowledge_path)
+    knowledge_content = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
+    logging.info("Knowledge content loaded successfully.")
+except Exception as e:
+    logging.error(f"Failed to extract knowledge from docx: {e}")
+    raise RuntimeError("Failed to load knowledge content.") from e
 
 # Start Flask app
 app = Flask(__name__)
@@ -44,13 +56,6 @@ def save_metrics():
     with open(metrics_file_path, 'w') as metrics_file:
         json.dump(metrics, metrics_file)
 
-# Extract knowledge from the .docx file
-knowledge_path = "knowledge.docx"
-try:
-    knowledge_content = functions.extract_knowledge_from_docx(knowledge_path)
-except Exception as e:
-    raise RuntimeError("Failed to load knowledge content.") from e
-
 @app.route('/start', methods=['GET'])
 def start_conversation():
     """Start a new conversation."""
@@ -58,14 +63,11 @@ def start_conversation():
         logging.debug("Starting a new conversation...")
         thread_id = str(int(time()))  # Generate a unique thread ID
         conversation_expiry[thread_id] = time() + 7 * 24 * 60 * 60  # Expire in 7 days
-
-        # Add system instructions dynamically based on extracted knowledge
-        system_message = {
-            "role": "system",
-            "content": functions.generate_system_instructions(knowledge_content)
-        }
-        conversation_transcripts[thread_id] = [system_message]
-
+        # Include the knowledge content in the system message
+        conversation_transcripts[thread_id] = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "system", "content": knowledge_content}
+        ]
         metrics["total_conversations"] += 1
         save_metrics()
         logging.debug(f"Thread created: {thread_id}")
@@ -98,7 +100,7 @@ def chat():
         start_time = time()
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
-            messages=conversation_transcripts[thread_id],  # Send full conversation history
+            messages=conversation_transcripts[thread_id]  # Send full conversation history
         )
         assistant_response = response['choices'][0]['message']['content']
         end_time = time()
@@ -107,12 +109,9 @@ def chat():
         conversation_transcripts[thread_id].append({"role": "assistant", "content": assistant_response})
         metrics["total_messages"] += 1
         response_time = end_time - start_time
-        metrics["average_response_time"] = (
-            (metrics["average_response_time"] * (metrics["total_messages"] - 1)) + response_time
-        ) / metrics["total_messages"]
+        metrics["average_response_time"] = ((metrics["average_response_time"] * (metrics["total_messages"] - 1)) + response_time) / metrics["total_messages"]
         save_metrics()
 
-        logging.debug(f"Assistant response sent for thread ID {thread_id}.")
         return jsonify({"response": assistant_response}), 200
     except Exception as e:
         logging.exception("Error in /chat endpoint.")
