@@ -5,6 +5,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 import openai
 import json
+import functions  # Import helper functions
 
 # Logging configuration
 logging.basicConfig(level=logging.DEBUG)
@@ -43,6 +44,13 @@ def save_metrics():
     with open(metrics_file_path, 'w') as metrics_file:
         json.dump(metrics, metrics_file)
 
+# Extract knowledge from the .docx file
+knowledge_path = "knowledge.docx"
+try:
+    knowledge_content = functions.extract_knowledge_from_docx(knowledge_path)
+except Exception as e:
+    raise RuntimeError("Failed to load knowledge content.") from e
+
 @app.route('/start', methods=['GET'])
 def start_conversation():
     """Start a new conversation."""
@@ -51,18 +59,13 @@ def start_conversation():
         thread_id = str(int(time()))  # Generate a unique thread ID
         conversation_expiry[thread_id] = time() + 7 * 24 * 60 * 60  # Expire in 7 days
 
-        # Add system instructions for the assistant
-        conversation_transcripts[thread_id] = [
-            {
-                "role": "system",
-                "content": (
-                    "You are a knowledgeable customer service assistant for Bluethistle AI. "
-                    "Answer questions accurately and concisely based on company offerings, pricing, and contact information. "
-                    "Refer users to official resources when necessary."
-                )
-            }
-        ]
-        
+        # Add system instructions dynamically based on extracted knowledge
+        system_message = {
+            "role": "system",
+            "content": functions.generate_system_instructions(knowledge_content)
+        }
+        conversation_transcripts[thread_id] = [system_message]
+
         metrics["total_conversations"] += 1
         save_metrics()
         logging.debug(f"Thread created: {thread_id}")
@@ -129,4 +132,3 @@ if __name__ == '__main__':
     if not os.path.exists('transcripts'):
         os.makedirs('transcripts')
     app.run(host='0.0.0.0', port=8080)
-
