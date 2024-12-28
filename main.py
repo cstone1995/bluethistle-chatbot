@@ -23,7 +23,7 @@ else:
     print("OpenAI version is compatible.")
 
 app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://bluethistleai.co.uk/"}})
+CORS(app, resources={r"/*": {"origins": "https://bluethistleai.co.uk"}})
 
 # Verification token for Facebook webhook
 VERIFY_TOKEN = 'bluethistle'
