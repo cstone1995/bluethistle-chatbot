@@ -4,3 +4,4 @@ openai==0.27.0
 packaging==21.3
 datetime==4.3
 Flask-CORS
+python-docx==0.8.11
