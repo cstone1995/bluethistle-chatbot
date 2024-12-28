@@ -23,9 +23,13 @@ knowledge_path = "/opt/render/project/src/knowledge.docx"
 
 # Load the knowledge content from the docx file
 try:
-    doc = docx.Document(knowledge_path)
-    knowledge_content = "\n".join([p.text for p in doc.paragraphs if p.text.strip()])
-    logging.info("Knowledge content loaded successfully.")
+    if os.path.exists(knowledge_path):
+        logging.info(f"Found knowledge file at: {knowledge_path}")
+        doc = docx.Document(knowledge_path)
+        knowledge_content = "\n".join([p.text.strip() for p in doc.paragraphs if p.text.strip()])
+        logging.info("Knowledge content loaded successfully.")
+    else:
+        raise FileNotFoundError(f"Knowledge file not found at: {knowledge_path}")
 except Exception as e:
     logging.error(f"Failed to extract knowledge from docx: {e}")
     raise RuntimeError("Failed to load knowledge content.") from e
