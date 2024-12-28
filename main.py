@@ -88,7 +88,7 @@ def verify_webhook():
     else:
         return 'Invalid verification token', 403
 
-@app.route('/start', methods=['GET'])
+@app.route('/start', methods=['GET', 'POST'])
 def start_conversation():
     print("Starting a new conversation...")
     thread = client.beta.threads.create()
