@@ -42,9 +42,9 @@ conversation_progress = {}
 conversation_expiry = {}
 conversation_transcripts = {}
 metrics = {
-    "total_conversations": 0, 
-    "total_messages": 0, 
-    "average_response_time": 0, 
+    "total_conversations": 0,
+    "total_messages": 0,
+    "average_response_time": 0,
     "links_clicked": {}
 }
 
@@ -75,6 +75,16 @@ def save_metrics():
     with open(metrics_file_path, 'w') as metrics_file:
         json.dump(metrics, metrics_file)
     update_metrics_server(metrics)
+
+@app.route('/webhook', methods=['GET'])
+def verify_webhook():
+    token_sent = request.args.get('hub.verify_token')
+    challenge = request.args.get('hub.challenge')
+
+    if token_sent == VERIFY_TOKEN:
+        return challenge
+    else:
+        return 'Invalid verification token', 403
 
 @app.route('/start', methods=['GET'])
 def start_conversation():
@@ -178,3 +188,4 @@ if __name__ == '__main__':
     if not os.path.exists('transcripts'):
         os.makedirs('transcripts')
     app.run(host='0.0.0.0', port=8080)
+
