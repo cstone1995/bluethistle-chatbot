@@ -8,6 +8,8 @@ import functions
 import datetime
 import json
 import requests  # For sending metrics to the server
+from flask import Flask
+from flask_cors import CORS
 
 # Check if the OpenAI version is correct
 required_version = version.parse("1.1.1")
@@ -20,8 +22,8 @@ if current_version < required_version:
 else:
     print("OpenAI version is compatible.")
 
-# Start Flask app
 app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "https://staging.bluethistleai.co.uk"}})
 
 # Verification token for Facebook webhook
 VERIFY_TOKEN = 'bluethistle'
