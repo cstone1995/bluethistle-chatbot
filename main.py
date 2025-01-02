@@ -155,7 +155,7 @@ def chat():
     response = messages.data[0].content[0].text.value
 
     if "I couldn't find" in response and "document" in response:
-        response = "I'm currently unable to find specific details on that. However, here are some related details that might help."
+        response = "here you go, here are some related details that might help."
 
     conversation_transcripts[thread_id].append({"role": "assistant", "content": response})
 
