@@ -5,30 +5,22 @@ from flask import Flask, request, jsonify
 import openai
 from openai import OpenAI
 import functions
-import datetime
 import json
-import requests  # For sending metrics to the server
-from flask import Flask
+import requests
 from flask_cors import CORS
+import logging
 
-# Check if the OpenAI version is correct
-required_version = version.parse("1.1.1")
-current_version = version.parse(openai.__version__)
+# Logging setup
+logging.basicConfig(level=logging.INFO, filename='assistant_debug.log', filemode='a', format='%(asctime)s - %(levelname)s - %(message)s')
+
+# OpenAI and Facebook setup
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
-
-# Validate the OpenAI version
-if current_version < required_version:
-    raise ValueError(f"Error: OpenAI version {openai.__version__} is less than the required version 1.1.1")
-else:
-    print("OpenAI version is compatible.")
-
-app = Flask(__name__)
-CORS(app, resources={r"/*": {"origins": "https://bluethistleai.co.uk"}})
-
-# Verification token for Facebook webhook
 VERIFY_TOKEN = 'bluethistle'
+FB_PAGE_ACCESS_TOKEN = os.environ.get('FB_PAGE_ACCESS_TOKEN')
 
-# Initialize the OpenAI client with v2 beta header
+if not FB_PAGE_ACCESS_TOKEN:
+    raise ValueError("Facebook Page Access Token is not set in environment variables.")
+
 client = OpenAI(
     api_key=OPENAI_API_KEY,
     default_headers={
@@ -39,44 +31,26 @@ client = OpenAI(
 # Create new assistant or load existing one
 assistant_id = functions.create_assistant(client)
 
-# Store customer information and conversation progress
-conversation_progress = {}
-conversation_expiry = {}
-conversation_transcripts = {}
+# Flask app setup
+app = Flask(__name__)
+CORS(app, resources={r"/*": {"origins": "https://bluethistleai.co.uk"}})
+
+# Metrics and conversation tracking
 metrics = {
     "total_conversations": 0,
     "total_messages": 0,
     "average_response_time": 0,
     "links_clicked": {}
 }
-
-# Save metrics to a file for persistent storage
 metrics_file_path = 'metrics.json'
+
 if os.path.exists(metrics_file_path):
     with open(metrics_file_path, 'r') as metrics_file:
         metrics = json.load(metrics_file)
 
-# Save metrics to the server
-def update_metrics_server(metrics):
-    try:
-        response = requests.post(
-            'https://85debbc8-c477-4fc6-9560-bd25296d0007-00-1wh5689x6osmd.spock.replit.dev/api/render-projects/srv-ctm09ol2ng1s73b9bg9g/metrics',
-            headers={
-                'Content-Type': 'application/json',
-                'X-API-Key': '0e70012e64f6e7530e48a43e0441fa4c'
-            },
-            json=metrics
-        )
-        if response.status_code != 200:
-            print("Failed to update metrics on the server")
-    except Exception as e:
-        print(f"Error updating metrics: {e}")
-
-# Save metrics to a file and the server
 def save_metrics():
     with open(metrics_file_path, 'w') as metrics_file:
         json.dump(metrics, metrics_file)
-    update_metrics_server(metrics)
 
 @app.route('/webhook', methods=['GET'])
 def verify_webhook():
@@ -88,106 +62,91 @@ def verify_webhook():
     else:
         return 'Invalid verification token', 403
 
-@app.route('/start', methods=['GET', 'POST'])
-def start_conversation():
-    print("Starting a new conversation...")
-    thread = client.beta.threads.create()
-    thread_id = thread.id
-    conversation_expiry[thread_id] = time() + 7 * 24 * 60 * 60
-    conversation_transcripts[thread_id] = []
-    metrics["total_conversations"] += 1
-    save_metrics()
-    print(f"New thread created with ID: {thread.id}")
-    return jsonify({"thread_id": thread.id})
-
-@app.route('/chat', methods=['POST'])
-def chat():
+@app.route('/webhook', methods=['POST'])
+def receive_facebook_message():
     data = request.json
-    thread_id = data.get('thread_id')
-    user_input = data.get('message', '')
+    if 'object' in data and data['object'] == 'page':
+        for entry in data.get('entry', []):
+            for event in entry.get('messaging', []):
+                sender_id = event['sender']['id']
+                if 'message' in event:
+                    user_message = event['message'].get('text', '')
+                    logging.info(f"Received message from {sender_id}: {user_message}")
 
-    if not thread_id:
-        return jsonify({"error": "Missing thread_id"}), 400
+                    # Generate a response using process_message
+                    try:
+                        response_message = process_message(user_message)
+                        send_message_to_facebook(sender_id, response_message)
+                    except Exception as e:
+                        logging.error(f"Error in processing message: {e}")
+                        send_message_to_facebook(sender_id, "Sorry, something went wrong.")
 
-    current_time = time()
-    if thread_id in conversation_expiry:
-        if current_time > conversation_expiry[thread_id]:
-            del conversation_expiry[thread_id]
-            if thread_id in conversation_progress:
-                del conversation_progress[thread_id]
-            if thread_id in conversation_transcripts:
-                del conversation_transcripts[thread_id]
-            return jsonify({"error": "Conversation has expired."}), 400
+                    # Update metrics
+                    metrics["total_messages"] += 1
+                    save_metrics()
+        return "EVENT_RECEIVED", 200
     else:
-        return jsonify({"error": "Invalid thread_id."}), 400
+        return "ERROR", 404
 
-    conversation_transcripts[thread_id].append({"role": "user", "content": user_input})
-    start_time = time()
+def send_message_to_facebook(recipient_id, message):
+    url = f"https://graph.facebook.com/v12.0/me/messages?access_token={FB_PAGE_ACCESS_TOKEN}"
+    headers = {"Content-Type": "application/json"}
+    data = {
+        "recipient": {"id": recipient_id},
+        "message": {"text": message},
+    }
+    try:
+        response = requests.post(url, headers=headers, json=data)
+        response.raise_for_status()
+        logging.info(f"Message sent to {recipient_id}: {message}")
+    except requests.exceptions.RequestException as e:
+        logging.error(f"Error sending message to Facebook: {e}")
 
-    message = client.beta.threads.messages.create(
-        thread_id=thread_id,
-        role="user",
-        content=user_input
-    )
-    
-    run = client.beta.threads.runs.create(
-        thread_id=thread_id,
-        assistant_id=assistant_id,
-        tools=[
-            {"type": "file_search"},
-            {"type": "code_interpreter"}
-        ]
-    )
+def process_message(user_message):
+    try:
+        # Create a thread (access the `id` attribute directly)
+        thread = client.beta.threads.create()
+        thread_id = thread.id  # Correctly access the thread ID
 
-    while True:
-        run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
-        if run_status.status == 'completed':
-            break
-        sleep(1)
+        # Send the user message to the thread
+        client.beta.threads.messages.create(
+            thread_id=thread_id,
+            role="user",
+            content=user_message
+        )
 
-    end_time = time()
-    response_time = end_time - start_time
-    metrics["total_messages"] += 1
-    metrics["average_response_time"] = ((metrics["average_response_time"] * (metrics["total_messages"] - 1)) + response_time) / metrics["total_messages"]
-    save_metrics()
+        # Process the assistant's response
+        run = client.beta.threads.runs.create(
+            thread_id=thread_id,
+            assistant_id=assistant_id,  # Use the assistant_id here
+            tools=[
+                {"type": "file_search"},
+                {"type": "code_interpreter"}
+            ]
+        )
 
-    messages = client.beta.threads.messages.list(thread_id=thread_id)
-    response = messages.data[0].content[0].text.value
+        # Wait for the response
+        timeout = 30  # Timeout in seconds
+        start_time = time()
+        while True:
+            run_status = client.beta.threads.runs.retrieve(thread_id=thread_id, run_id=run.id)
+            if run_status.status == "completed":
+                break
+            if time() - start_time > timeout:
+                return "Sorry, the response took too long. Please try again later."
+            sleep(2)
 
-    if "I couldn't find" in response and "document" in response:
-        response = "here you go, here are some related details that might help."
+        # Retrieve the assistant's response
+        messages = client.beta.threads.messages.list(thread_id=thread_id)
+        # Extract the response text from TextContentBlock
+        response_content = messages.data[0].content[0].text.value
+        logging.info(f"Assistant response: {response_content}")
+        return response_content
 
-    conversation_transcripts[thread_id].append({"role": "assistant", "content": response})
-
-    with open(f'transcripts/{thread_id}.json', 'w') as transcript_file:
-        json.dump(conversation_transcripts[thread_id], transcript_file)
-
-    return jsonify({"response": response})
-
-@app.route('/ping', methods=['GET'])
-def keep_alive():
-    return "I am alive!", 200
-
-@app.route('/metrics', methods=['GET'])
-def get_metrics():
-    return jsonify(metrics)
-
-@app.route('/link_click', methods=['POST'])
-def track_link_click():
-    data = request.json
-    link = data.get('link')
-
-    if link:
-        if link not in metrics["links_clicked"]:
-            metrics["links_clicked"][link] = 0
-        metrics["links_clicked"][link] += 1
-        save_metrics()
-        return jsonify({"message": "Link click recorded"}), 200
-    else:
-        return jsonify({"error": "Missing link data"}), 400
+    except Exception as e:
+        logging.error(f"Error querying assistant: {e}")
+        return "Sorry, I couldn't process your request. Please try again later."
 
 if __name__ == '__main__':
-    if not os.path.exists('transcripts'):
-        os.makedirs('transcripts')
     app.run(host='0.0.0.0', port=8080)
 
